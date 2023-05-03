@@ -1,16 +1,10 @@
 import torch
 from pandas import DataFrame
-from transformers import BertTokenizer, BertForSequenceClassification
 import tiktok_text_processing
 import ml_utils
 import time
-import numpy as np
-import matplotlib.pyplot as plt
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-import sys
 import pandas as pd
-import sys, getopt
-import random
 
 from tiktok_bert import TikTokBertClassifier
 
