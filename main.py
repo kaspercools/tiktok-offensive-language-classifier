@@ -51,7 +51,7 @@ def generate_plots(df: pd.DataFrame) -> None:
 
 
 def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, val_ratio: float,
-                   batch_size: int, epochs: int, include_slang: bool = False,
+                   batch_size: int, max_token_len: int, epochs: int, include_slang: bool = False,
                    include_emoji: bool = False) -> tuple[[dict], BertForSequenceClassification]:
     # read data from file
     df = ml_utils.read_data_frame(sourcefile)
@@ -60,7 +60,8 @@ def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, v
     preprocess_comments(df, include_emoji)
     print_data_len(df)
 
-    classifier = TikTokBertClassifier(include_slang, include_emoji, batch_size, learning_rate, epochs, adam_epsilon)
+    classifier = TikTokBertClassifier(include_slang, include_emoji, batch_size, max_token_len, learning_rate, epochs,
+                                      adam_epsilon)
 
     token_id, attention_masks = classifier.encode_data(df['comment'])
     token_id = torch.cat(token_id, dim=0)
@@ -91,14 +92,13 @@ def print_data_len(df):
 
 
 def sample_testing(classifier, device):
-    comment_max_len = 150
     # add some custom validation
     new_comment = 'LOLOLOL @babaaibrahim the bitch was driving it. God damn I\'m not sexist but that is not a car ' \
                   'that should be driven by a female ever lolike him and GOP needs CO to get to 270. '
-    prediction = test_model_single_sample(device, classifier, new_comment, comment_max_len)
+    prediction = test_model_single_sample(device, classifier, new_comment)
     print(prediction)
     new_comment = "cap"
-    prediction = test_model_single_sample(device, classifier, new_comment, comment_max_len)
+    prediction = test_model_single_sample(device, classifier, new_comment)
     print(prediction)
 
 
@@ -108,14 +108,13 @@ def preprocess_comments(df, include_emoji):
         df['comment'] = df['comment'].apply(tiktok_text_processing.replace_emoji_w_token)
 
 
-def test_model_single_sample(device: torch.device, classifier: TikTokBertClassifier, comment: str,
-                             comments_max_len: int) -> str:
+def test_model_single_sample(device: torch.device, classifier: TikTokBertClassifier, comment: str) -> str:
     # We need Token IDs and Attention Mask for inference on the new sentence
     test_ids = []
     test_attention_mask = []
 
     # Apply the tokenizer
-    encoding = ml_utils.preprocessing(comment, classifier.tokenizer, comments_max_len)
+    encoding = ml_utils.preprocessing(comment, classifier.tokenizer, classifier.tokens_max_len)
 
     # Extract IDs and Attention Mask
     test_ids.append(encoding['input_ids'])
@@ -139,28 +138,38 @@ def main(argv):
     adam_epsilon = 1e-08
     val_ratio = 0.2
     epochs = 2
-    outputdir = 'models'
+    output_dir = 'models'
     iterations = 100
-    inputfile = None
+    max_token_len = 150
+    input_file = None
 
-    opts, args = getopt.getopt(argv, "hi:o:lr:ae:vr:e:b:n:",
-                               ["ifile=", "outdir=", "learning_rate=", "validation_ratio=", "epochs=", "batch_size=",
-                                "iterations="])
+    opts, args = getopt.getopt(argv, "h:i:o:l;a:v:e:b:t:n:",
+                               [
+                                   "help"
+                                   "ifile=",
+                                   "outdir=",
+                                   "learning_rate=",
+                                   "validation_ratio=",
+                                   "epochs=",
+                                   "batch_size=",
+                                   "max_token_len=",
+                                   "iterations="])
+    print(opts)
     for opt, arg in opts:
         if opt == '-h':
             print(
-                'main.py -i <input file> -o <output dir> -lr <learning rate> -ae <adam_epsilon> -vr <validation ratio> '
-                '-e <epochs> -b <batch size> -n <number of iterations>')
+                'main.py -i <input file> -o <output dir> -l <learning rate> -a <adam_epsilon> -v <validation ratio> '
+                '-e <epochs> -b <batch size> -t <max token len> -n <number of iterations>')
             sys.exit()
         elif opt in ("-i", "--ifile"):
-            inputfile = arg
+            input_file = arg
         elif opt in ("-o", "--odir"):
-            outputdir = arg
-        elif opt in ("-lr", "--learning_rate"):
+            output_dir = arg
+        elif opt in ("-l", "--learning_rate"):
             learning_rate = float(arg)
-        elif opt in ("-ao", "--adam_epsilon"):
+        elif opt in ("-a", "--adam_epsilon"):
             adam_epsilon = float(arg)
-        elif opt in ("-vr", "--validation_ratio"):
+        elif opt in ("-v", "--validation_ratio"):
             val_ratio = float(arg)
         elif opt in ("-e", "--epochs"):
             epochs = int(arg)
@@ -168,16 +177,18 @@ def main(argv):
             batch_size = int(arg)
         elif opt in ("-n", "--iterations"):
             iterations = int(arg)
+        elif opt in ("-t", "--max_token_len"):
+            max_token_len = int(arg)
 
-    if not inputfile:
+    if not input_file:
         # if no inputfile, let the user know:
         print("No input provided! Please provide a csv file with 2 columns: 1) comment, and 2) offensive (binary "
               "label)")
         quit()
 
     for i in range(iterations):
-        training_results, model = train_sequence(inputfile, learning_rate, adam_epsilon, val_ratio,
-                                                 batch_size, epochs,
+        training_results, model = train_sequence(input_file, learning_rate, adam_epsilon, val_ratio,
+                                                 batch_size, max_token_len, epochs,
                                                  True, True)
         new_max_f_score = max([float(d['F1']) for d in training_results])
         print('F1 score ' + str(max_f_score))
@@ -186,7 +197,7 @@ def main(argv):
         if is_new_max:
             max_f_score = new_max_f_score
 
-        export_data(batch_size, epochs, is_new_max, learning_rate, model, outputdir, training_results)
+        export_data(batch_size, epochs, is_new_max, learning_rate, model, output_dir, training_results)
 
 
 def export_data(batch_size, epochs, is_new_max, learning_rate, model, outputdir, training_results):

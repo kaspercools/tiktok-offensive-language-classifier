@@ -72,13 +72,12 @@ def clear_gpu_cache() -> None:
     torch.cuda.empty_cache()
 
 
-def encode_data(tokenizer: BertTokenizer, items: DataLoader) -> tuple[list[Any], list[Any]]:
+def encode_data(tokenizer: BertTokenizer, items: DataLoader, text_max_len: int) -> tuple[list[Any], list[Any]]:
     token_ids = []
     attention_masks = []
 
-    item_max_len = 150
     for sample in items:
-        encoding_dict = preprocessing(sample.lower(), tokenizer, item_max_len)
+        encoding_dict = preprocessing(sample.lower(), tokenizer, text_max_len)
         token_ids.append(encoding_dict['input_ids'])
         attention_masks.append(encoding_dict['attention_mask'])
 
