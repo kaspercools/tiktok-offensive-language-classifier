@@ -1,9 +1,6 @@
 from torch.utils.data import DataLoader
 from transformers import BertForSequenceClassification
 
-import ml_utils
-
-
 class TikTokBertClassifier:
     def __init__(self, include_slang: bool, include_emoji: bool,
                  batch_size: float = 32,

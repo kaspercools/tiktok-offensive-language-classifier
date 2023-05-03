@@ -5,9 +5,8 @@ import torch
 from pandas import DataFrame
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
 
-import ml_utils
-import tiktok_text_processing
-from tiktok_bert import TikTokBertClassifier
+from ou_ml import tiktok_text_processing, utils as ml_utils
+from ou_ml.tiktok_bert import TikTokBertClassifier
 
 
 def evaluate_samples(bert_classifier: TikTokBertClassifier, device: torch.cuda.device, df: DataFrame):

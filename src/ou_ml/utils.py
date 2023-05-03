@@ -11,9 +11,9 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from tqdm import trange
 from transformers import BertTokenizer, BertForSequenceClassification
 
-import tiktok_text_processing
-from ml_metric import MlMetric
-from tiktok_bert import TikTokBertClassifier
+from . import tiktok_text_processing
+from . import MlMetric
+from . import TikTokBertClassifier
 
 
 def b_tp(preds, labels) -> float:

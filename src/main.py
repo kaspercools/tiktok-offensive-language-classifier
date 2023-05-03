@@ -10,9 +10,8 @@ import torch
 from tabulate import tabulate
 from transformers import BertTokenizer, BertForSequenceClassification
 
-import ml_utils
-import tiktok_text_processing
-from tiktok_bert import TikTokBertClassifier
+from ou_ml import tiktok_text_processing, utils as ml_ml_utils
+from ou_ml.tiktok_bert import TikTokBertClassifier
 
 F_SCORE_THRESHOLD = 0.6
 
