@@ -35,16 +35,7 @@ def evaluate_samples(bert_classifier: TikTokBertClassifier, device: torch.cuda.d
 
     model_metrics = ml_utils.evaluate(device, bert_classifier,
                                       validation_dataloader)
-
-    return {
-        'F1': '{:.4f}'.format(model_metrics.F1),
-        'accuracy': '{:.4f}'.format(model_metrics.accuracy),
-        'precision': '{:.4f}'.format(model_metrics.precision),
-        'recall': '{:.4f}'.format(model_metrics.recall),
-        'specificity': '{:.4f}'.format(model_metrics.specificity),
-        'labels': model_metrics.labels,
-        'predictions': model_metrics.predictions
-    }
+    return ml_utils.training_result_to_dict(model_metrics)
 
 
 def run(model_path: str) -> None:

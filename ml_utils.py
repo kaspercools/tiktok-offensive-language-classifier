@@ -35,7 +35,6 @@ def b_fn(preds, labels) -> float:
     '''Returns False Negatives (FN): count of wrong predictions of actual class 0'''
     return sum([preds != labels and preds == 0 for preds, labels in zip(preds, labels)])
 
-
 def calculate_ml_metrics(predictions, labels, reference_axis=1) -> MlMetric:
     '''
   Returns the following metrics:
@@ -60,11 +59,6 @@ def calculate_ml_metrics(predictions, labels, reference_axis=1) -> MlMetric:
     b_recall = tp / (tp + fn) if (tp + fn) > 0 else 'nan'
     b_specificity = tn / (tn + fp) if (tn + fp) > 0 else 'nan'
     return MlMetric(b_accuracy, b_precision, b_recall, b_specificity)
-
-
-def calculate_f_score(precision: float, recall: float) -> float:
-    return 2 * (precision * recall) / (precision + recall)
-
 
 def clear_gpu_cache() -> None:
     # clear cache on re-run
@@ -205,13 +199,8 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
             nb_tr_steps += 1
 
         ml_metrics = evaluate(device, classifier, validation_dataloader)
-        loss = tr_loss / nb_tr_steps
-
-        f_score = calculate_f_score(ml_metrics.precision, ml_metrics.recall)
-
-        training_result = training_result_to_dict(f_score, loss, ml_metrics.accuracy, ml_metrics.precision,
-                                                  ml_metrics.recall, ml_metrics.specificity, ml_metrics.labels,
-                                                  ml_metrics.predictions)
+        ml_metrics.loss = tr_loss / nb_tr_steps
+        training_result = training_result_to_dict(ml_metrics)
 
         print_training_result(training_result)
 
@@ -220,16 +209,16 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
     return training_results
 
 
-def training_result_to_dict(F1, loss, accuracy, precision, recall, specificity, labels, predictions):
+def training_result_to_dict(ml_metrics: MlMetric) -> dict:
     return {
-        'F1': '{:.4f}'.format(F1),
-        'loss': '{:.4f}'.format(loss),
-        'accuracy': '{:.4f}'.format(accuracy),
-        'precision': '{:.4f}'.format(precision),
-        'recall': '{:.4f}'.format(recall),
-        'specificity': '{:.4f}'.format(specificity),
-        'labels': labels,
-        'predictions': predictions
+        'F1': '{:.4f}'.format(ml_metrics.calculate_f_score()),
+        'loss': '{:.4f}'.format(ml_metrics.loss),
+        'accuracy': '{:.4f}'.format(ml_metrics.accuracy),
+        'precision': '{:.4f}'.format(ml_metrics.precision),
+        'recall': '{:.4f}'.format(ml_metrics.recall),
+        'specificity': '{:.4f}'.format(ml_metrics.specificity),
+        'labels': ml_metrics.labels,
+        'predictions': ml_metrics.predictions
     }
 
 
