@@ -203,14 +203,14 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
             nb_tr_examples += b_input_ids.size(0)
             nb_tr_steps += 1
 
-        accuracy, precision, recall, specificity, predictions, labels = evaluate(device, classifier,
-                                                                                 validation_dataloader)
+        ml_metrics = evaluate(device, classifier, validation_dataloader)
         loss = tr_loss / nb_tr_steps
 
-        f_score = calculate_f_score(precision, recall)
+        f_score = calculate_f_score(ml_metrics.precision, ml_metrics.recall)
 
-        training_result = training_result_to_dict(f_score, loss, accuracy, precision, recall, specificity, labels,
-                                                  predictions)
+        training_result = training_result_to_dict(f_score, loss, ml_metrics.accuracy, ml_metrics.precision,
+                                                  ml_metrics.recall, ml_metrics.specificity, ml_metrics.labels,
+                                                  ml_metrics.predictions)
 
         print_training_result(training_result)
 
