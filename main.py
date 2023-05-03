@@ -14,7 +14,7 @@ import ml_utils
 import tiktok_text_processing
 from tiktok_bert import TikTokBertClassifier
 
-CURRENT_F_SCORE_THRESHOLD = 0.6
+F_SCORE_THRESHOLD = 0.6
 
 
 def print_rand_sentence(tokenizer: BertTokenizer, comments: list) -> None:
@@ -194,7 +194,7 @@ def main(argv):
         new_max_f_score = max([float(d['F1']) for d in training_results])
         print('F1 score ' + str(max_f_score))
 
-        is_new_max = new_max_f_score >= CURRENT_F_SCORE_THRESHOLD
+        is_new_max = new_max_f_score >= F_SCORE_THRESHOLD
         if is_new_max:
             max_f_score = new_max_f_score
 
