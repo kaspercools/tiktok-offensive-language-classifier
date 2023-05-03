@@ -157,7 +157,6 @@ def remove_usernames(comment: str) -> str:
 def save_model(model: BertForSequenceClassification, training_results: list, filepath: str,
                only_json: bool = False) -> None:
     if not only_json:
-        # todo save results as well
         torch.save(model.state_dict(), filepath)
 
     # Serializing json
@@ -179,7 +178,6 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
     training_results = []
 
     for _ in trange(classifier.epochs, desc='Epoch'):
-
         # ========== Training ==========
         # Set model to training mode
         classifier.model.train()
@@ -208,9 +206,9 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
         accuracy, precision, recall, specificity, predictions, labels = evaluate(device, classifier.model, validation_dataloader)
         loss = tr_loss / nb_tr_steps
 
-        F1 = calculate_f_score(precision, recall)
+        f_score = calculate_f_score(precision, recall)
 
-        training_result = training_result_to_dict(F1, loss, accuracy, precision, recall, specificity, labels,
+        training_result = training_result_to_dict(f_score, loss, accuracy, precision, recall, specificity, labels,
                                                   predictions)
 
         print_training_result(training_result)
