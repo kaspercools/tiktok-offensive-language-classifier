@@ -75,11 +75,12 @@ If you wish, you can pass your own hyperparameters for fine-tuning the training 
     main.py 
         -i <inputfile> 
         -o <outputdir> 
-        -lr <learning rate> 
-        -ae <adam_epsilon>
-        -vr <validation ratio> 
+        -l <learning rate> 
+        -a <adam_epsilon>
+        -v <validation ratio> 
         -e <epochs> 
-        -b <batch size> 
+        -b <batch size>
+        -t <max token length> 
         -n <number of iterations>
 ````
 
@@ -92,6 +93,7 @@ The only actual required parameter is the input csv dataset, the other values de
 - outputdir='models'
 - dataFolder='data'
 - iterations=100
+- max_token_len = 150
 
 Training sequence will look for cuda support, if cuda is not available, then cpu is used for training.
 
