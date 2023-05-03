@@ -192,9 +192,9 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
             optimizer.zero_grad()
             # Forward pass
             train_output = classifier.model(b_input_ids,
-                                 token_type_ids=None,
-                                 attention_mask=b_input_mask,
-                                 labels=b_labels)
+                                            token_type_ids=None,
+                                            attention_mask=b_input_mask,
+                                            labels=b_labels)
             # Backward pass
             train_output.loss.backward()
             optimizer.step()
@@ -203,7 +203,8 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
             nb_tr_examples += b_input_ids.size(0)
             nb_tr_steps += 1
 
-        accuracy, precision, recall, specificity, predictions, labels = evaluate(device, classifier.model, validation_dataloader)
+        accuracy, precision, recall, specificity, predictions, labels = evaluate(device, classifier,
+                                                                                 validation_dataloader)
         loss = tr_loss / nb_tr_steps
 
         f_score = calculate_f_score(precision, recall)
@@ -285,7 +286,7 @@ def evaluate(device: torch.device, classifier: TikTokBertClassifier, validation_
     return MlMetric(accuracy, precision, recall, specificity, all_predictions, all_label_ids)
 
 
-def evaluate_batch(batch, device, model):
+def evaluate_batch(batch: list, device: torch.device, model: BertForSequenceClassification):
     b_input_ids, b_input_mask, b_labels = tuple(t.to(device) for t in batch)
     with torch.no_grad():
         # Forward pass
