@@ -62,7 +62,7 @@ def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, v
 
     classifier = TikTokBertClassifier(include_slang, include_emoji, batch_size, learning_rate, epochs, adam_epsilon)
 
-    token_id, attention_masks = classifier.encode_data(classifier.tokenizer, df['comment'])
+    token_id, attention_masks = classifier.encode_data(df['comment'])
     token_id = torch.cat(token_id, dim=0)
     attention_masks = torch.cat(attention_masks, dim=0)
     labels = torch.tensor(df.offensive.values)
