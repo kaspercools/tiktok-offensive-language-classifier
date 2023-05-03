@@ -1,4 +1,6 @@
 import json
+from typing import Tuple, List, Any
+
 import torch
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from sklearn.model_selection import train_test_split
@@ -70,7 +72,7 @@ def clear_gpu_cache() -> None:
     torch.cuda.empty_cache()
 
 
-def encode_data(tokenizer: BertTokenizer, items: DataLoader) -> tuple([list, list]):
+def encode_data(tokenizer: BertTokenizer, items: DataLoader) -> tuple[list[Any], list[Any]]:
     token_ids = []
     attention_masks = []
 
@@ -80,7 +82,7 @@ def encode_data(tokenizer: BertTokenizer, items: DataLoader) -> tuple([list, lis
         token_ids.append(encoding_dict['input_ids'])
         attention_masks.append(encoding_dict['attention_mask'])
 
-    return (token_ids, attention_masks)
+    return token_ids, attention_masks
 
 
 def preprocessing(input_text: str, tokenizer: BertTokenizer, items_max_len: int) -> BertTokenizer:
