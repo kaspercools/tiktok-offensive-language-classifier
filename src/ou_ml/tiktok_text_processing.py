@@ -1,7 +1,6 @@
 import string
 
 import emoji
-import pandas as pd
 from emot.emo_unicode import UNICODE_EMOJI_ALIAS, EMOTICONS_EMO
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
@@ -28,24 +27,8 @@ all_emoji_emoticons = {k: transform_emoji_name(v.lower().replace("'", "").replac
                        all_emoji_emoticons.items()}
 
 
-def build_internet_slang_dictionary() -> dict:
-    df = pd.read_csv(data_folder + '/internet_slangs.csv')
-    df.head()
-    df = df.drop(columns=['id'])
-    slang_dictionary = df.to_dict('records')
-
-    return slang_dictionary
-
-
 def get_emoji_tokens() -> list:
     return all_emoji_emoticons.values()
-
-
-def get_genz_slang() -> list:
-    df = pd.read_csv(data_folder + '/genz_slang.csv')
-    df['keyword'] = df['keyword'].apply(lambda c: c.lower())
-    df.head()
-    return df.keyword.to_list()
 
 
 def replace_emoji_w_token(comment: str) -> str:

@@ -1,7 +1,5 @@
 import json
 import re
-from typing import Any
-
 import gc
 import numpy as np
 import pandas as pd
@@ -66,38 +64,6 @@ def clear_gpu_cache() -> None:
     # clear cache on re-run
     gc.collect()
     torch.cuda.empty_cache()
-
-
-def encode_data(tokenizer: BertTokenizer, items: DataLoader, text_max_len: int) -> tuple[list[Any], list[Any]]:
-    token_ids = []
-    attention_masks = []
-
-    for sample in items:
-        encoding_dict = preprocessing(sample.lower(), tokenizer, text_max_len)
-        token_ids.append(encoding_dict['input_ids'])
-        attention_masks.append(encoding_dict['attention_mask'])
-
-    return token_ids, attention_masks
-
-
-def preprocessing(input_text: str, tokenizer: BertTokenizer, items_max_len: int) -> BertTokenizer:
-    '''
-  Returns <class transformers.tokenization_utils_base.BatchEncoding> with the following fields:
-    - input_ids: list of token ids
-    - token_type_ids: list of token type ids
-    - attention_mask: list of indices (0,1) specifying which tokens should considered by the model (return_attention_mask = True).
-  '''
-    # https://github.com/huggingface/transformers/issues/1490
-    return tokenizer.encode_plus(
-        input_text,
-        add_special_tokens=True,
-        max_length=items_max_len,
-        pad_to_max_length=True,
-        return_attention_mask=True,
-        truncation=True,
-        return_tensors='pt'
-    )
-
 
 def create_datasets(token_ids: list, attention_masks: list, labels: list, val_ratio: float,
                     batch_size: int = 16) -> tuple[DataLoader, DataLoader]:
@@ -286,18 +252,3 @@ def evaluate_batch(batch: list, device: torch.device, model: BertForSequenceClas
                             token_type_ids=None,
                             attention_mask=b_input_mask)
     return b_labels, eval_output
-
-
-def generate_tokenizer(include_slang: bool = False, include_emoji: bool = False) -> BertTokenizer:
-    tokenizer = BertTokenizer.from_pretrained(
-        'bert-base-uncased',
-        do_lower_case=True)
-
-    # add custom tik~tok gen-z tokens to tokenizer
-    if include_slang:
-        num_genz_slang_added_tokens = tokenizer.add_tokens(tiktok_text_processing.get_genz_slang())
-    if include_emoji:
-        num_emoji_added_tokens = tokenizer.add_tokens(
-            tiktok_text_processing.get_emoji_tokens())  # cfr https://arxiv.org/pdf/1910.13793.pdf
-
-    return tokenizer

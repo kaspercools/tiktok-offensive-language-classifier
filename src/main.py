@@ -10,7 +10,7 @@ import torch
 from tabulate import tabulate
 from transformers import BertTokenizer, BertForSequenceClassification
 
-from ou_ml import tiktok_text_processing, utils as ml_ml_utils
+from ou_ml import tiktok_text_processing, utils as ml_utils
 from ou_ml.tiktok_bert import TikTokBertClassifier
 
 F_SCORE_THRESHOLD = 0.6
@@ -60,10 +60,11 @@ def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, v
     preprocess_comments(df, include_emoji)
     print_data_len(df)
 
-    classifier = TikTokBertClassifier(include_slang, include_emoji, batch_size, max_token_len, learning_rate, epochs,
-                                      adam_epsilon)
+    bert_classifier = TikTokBertClassifier(include_slang, include_emoji, batch_size, max_token_len, learning_rate,
+                                           epochs,
+                                           adam_epsilon)
 
-    token_id, attention_masks = classifier.encode_data(df['comment'])
+    token_id, attention_masks = bert_classifier.encode_data(df['comment'])
     token_id = torch.cat(token_id, dim=0)
     attention_masks = torch.cat(attention_masks, dim=0)
     labels = torch.tensor(df.offensive.values)
@@ -72,16 +73,16 @@ def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, v
                                                                        batch_size)
 
     if torch.cuda.is_available():
-        classifier.use_cuda()
+        bert_classifier.use_cuda()
         device = torch.device('cuda')
     else:
         device = torch.device('cpu')
 
-    training_results = ml_utils.train(device, classifier, train_dataloader, validation_dataloader)
+    training_results = ml_utils.train(device, bert_classifier, train_dataloader, validation_dataloader)
 
-    sample_testing(classifier, device)
+    sample_testing(bert_classifier, device)
 
-    return training_results, classifier.model
+    return training_results, bert_classifier.model
 
 
 def print_data_len(df):
@@ -154,7 +155,7 @@ def main(argv):
                                    "batch_size=",
                                    "max_token_len=",
                                    "iterations="])
-    print(opts)
+
     for opt, arg in opts:
         if opt == '-h':
             print(

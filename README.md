@@ -65,7 +65,24 @@ The dataset that can be found in the data folder is harvested
 from [another github page/research](https://github.com/dhavalpotdar/detecting-offensive-language-in-tweets) and used to
 evaluate our model's performance on unseen data.
 
-## Dependencies
+## Docker setup
+
+The easiest way to get started is by setting up your environment using docker.
+To do so, you first need to build an image locally. Open a terminal window and navigate to the root of this repository
+to execute the following command:
+> docker build . -t ou_ml_tiktok
+
+Once the docker image is build you can execute the python using the following command:
+
+``` dockerfile
+docker run --rm -it --init \
+  --user="$(id -u):$(id -g)" \
+  --volume="$PWD:/app" \
+  ou_ml_tiktok python3 main.py -i "data/comments_anonymous.csv"
+````
+
+## Environment setup
+### Dependencies
 
 You'll need a working Python environment to run the code.
 The recommended way to set up your environment is through the
