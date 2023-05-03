@@ -11,156 +11,143 @@ import sys, getopt
 from tabulate import tabulate
 import random
 
-max_F1 = 0
-def print_rand_sentence(tokenizer: BertTokenizer, comments: list)-> None:
-  '''Displays the tokens and respective IDs of a random text sample'''
-  index = random.randint(0, len(comments)-1)
-  table = np.array([tokenizer.tokenize(comments[index]), 
-                    tokenizer.convert_tokens_to_ids(tokenizer.tokenize(comments[index]))]).T
-  print(tabulate(table,
-                 headers = ['Tokens', 'Token IDs'],
-                 tablefmt = 'fancy_grid'))
+from tiktok_bert import TikTokBertClassifier
 
-def print_rand_sentence_encoding(tokenizer: BertTokenizer, item_count: int, token_ids: list, attention_masks:list) -> None:
-  '''Displays tokens, token IDs and attention mask of a random text sample'''
-  index = random.randint(0, item_count - 1)
-  tokens = tokenizer.tokenize(tokenizer.decode(token_ids[index]))
-  token_ids = [i.numpy() for i in token_ids[index]]
-  attention = [i.numpy() for i in attention_masks[index]]
+CURRENT_F_SCORE_THRESHOLD = 0.6
 
-  table = np.array([tokens, token_ids, attention]).T
-  print(tabulate(table, 
-                 headers = ['Tokens', 'Token IDs', 'Attention Mask'],
-                 tablefmt = 'fancy_grid'))
+
+def print_rand_sentence(tokenizer: BertTokenizer, comments: list) -> None:
+    """Displays the tokens and respective IDs of a random text sample"""
+    index = random.randint(0, len(comments) - 1)
+    table = np.array([tokenizer.tokenize(comments[index]),
+                      tokenizer.convert_tokens_to_ids(tokenizer.tokenize(comments[index]))]).T
+    print(tabulate(table,
+                   headers=['Tokens', 'Token IDs'],
+                   tablefmt='fancy_grid'))
+
+
+def print_rand_sentence_encoding(tokenizer: BertTokenizer, item_count: int, token_ids: list,
+                                 attention_masks: list) -> None:
+    """Displays tokens, token IDs and attention mask of a random text sample"""
+    index = random.randint(0, item_count - 1)
+    tokens = tokenizer.tokenize(tokenizer.decode(token_ids[index]))
+    token_ids = [i.numpy() for i in token_ids[index]]
+    attention = [i.numpy() for i in attention_masks[index]]
+
+    table = np.array([tokens, token_ids, attention]).T
+    print(tabulate(table,
+                   headers=['Tokens', 'Token IDs', 'Attention Mask'],
+                   tablefmt='fancy_grid'))
+
 
 def generate_plots(df: pd.DataFrame) -> None:
-    df.groupby(['offensive']).size().plot.bar()
-    plt.show()
-    df.head()
-
-def start_training_sequence(sourcefile: str, outputdir: str, dataFolder:str, learning_rate:float, val_ratio:float, batch_size:int, epochs:int, include_slang:bool=False, include_emoji:bool=False) -> None:
-    global max_F1
-    # read data from file
-    df = ml_utils.read_data_frame(sourcefile)
-    #preproccessing
-    df['comment'] = df['comment'].apply(ml_utils.remove_links)
-    if include_emoji:
-        df['comment'] = df['comment'].apply(tiktok_text_processing.replace_emoji_w_token)
-
-    #print(df.sample(25))
-    # get comments and labels
-    comments = df.comment.values    
-    
-    #generate_plots(df)
-    
-    # data exploration
-    df['comment_len']  = df['comment'].str.len()
-    
+    # show plot grouped by comment len
     ax = df.groupby(['comment_len']).size().plot.bar()
     for i, t in enumerate(ax.get_xticklabels()):
         if (i % 5) != 0:
             t.set_visible(False)
 
-    #plt.show()
+    plt.show()
 
-    comment_mean = df['comment'].str.len().mean()
-    print('Average string length:', df['comment'].str.len().mean())
-    print('Max sentence length: ', max([len(comment.split(' ')) for comment in comments]))
 
-    
-    tokenizer = ml_utils.generate_tokenizer(include_slang, include_emoji)
-    token_id, attention_masks = ml_utils.encode_data(tokenizer, df['comment'])
+def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, val_ratio: float,
+                   batch_size: int, epochs: int, include_slang: bool = False,
+                   include_emoji: bool = False) -> tuple[[dict], BertForSequenceClassification]:
+    # read data from file
+    df = ml_utils.read_data_frame(sourcefile)
 
+    # preprocessing
+    preprocess_comments(df, include_emoji)
+    print_data_len(df)
+
+    classifier = TikTokBertClassifier(include_slang, include_emoji, batch_size, learning_rate, epochs, adam_epsilon)
+
+    token_id, attention_masks = classifier.encode_data(classifier.tokenizer, df['comment'])
     token_id = torch.cat(token_id, dim=0)
-    attention_masks = torch.cat(attention_masks, dim=0)    
-
+    attention_masks = torch.cat(attention_masks, dim=0)
     labels = torch.tensor(df.offensive.values)
 
-    #print_rand_sentence_encoding(tokenizer, len(comments), token_id, attention_masks)
+    train_dataloader, validation_dataloader = ml_utils.create_datasets(token_id, attention_masks, labels, val_ratio,
+                                                                       batch_size)
 
-    train_dataloader, validation_dataloader= ml_utils.create_datasets(token_id, attention_masks, labels, val_ratio, batch_size)
-
-    # Load the BertForSequenceClassification model
-    model = BertForSequenceClassification.from_pretrained(
-        'bert-base-uncased',
-        num_labels = 2,
-        output_attentions = False,
-        output_hidden_states = False,
-    )       
-    model.resize_token_embeddings(len(tokenizer))
-
-    # Run on GPU
-    model.cuda()
+    classifier.use_cuda()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    training_results = ml_utils.train(device, model, train_dataloader, validation_dataloader, learning_rate, epochs)
+    training_results = ml_utils.train(device, classifier, train_dataloader, validation_dataloader)
 
+    sample_testing(classifier, device)
+
+    return training_results, classifier.model
+
+
+def print_data_len(df):
+    df['comment_len'] = df['comment'].str.len()
+    comment_mean = df['comment'].str.len().mean()
+    print('Average string length:', comment_mean)
+    print('Max sentence length: ', max([len(comment.split(' ')) for comment in df['comment']]))
+
+
+def sample_testing(classifier, device):
     comment_max_len = 150
-    
     # add some custom validation
-    new_comment = 'LOLOLOL @babaaibrahim the bitch was driving it. God damn I\'m not sexist but that is not a car that should be driven by a female ever lolike him and GOP needs CO to get to 270.'
-    prediction = test_model_single_sample(device, model, tokenizer, new_comment, comment_max_len)
+    new_comment = 'LOLOLOL @babaaibrahim the bitch was driving it. God damn I\'m not sexist but that is not a car ' \
+                  'that should be driven by a female ever lolike him and GOP needs CO to get to 270. '
+    prediction = test_model_single_sample(device, classifier.model, new_comment, comment_max_len)
     print(prediction)
     new_comment = "cap"
-    prediction = test_model_single_sample(device, model, tokenizer, new_comment, comment_max_len)
+    prediction = test_model_single_sample(device, classifier, new_comment, comment_max_len)
     print(prediction)
-    
-    timestr = time.strftime("%Y%m%d_%H%M%S")
-    filepath = outputdir+'/'+timestr+'_offensive.bak'
 
-    new_max_f1 = max([float(d['F1']) for d in training_results])
 
-    print('F1 score '+ str(max_F1))
+def preprocess_comments(df, include_emoji):
+    df['comment'] = df['comment'].apply(ml_utils.remove_links)
+    if include_emoji:
+        df['comment'] = df['comment'].apply(tiktok_text_processing.replace_emoji_w_token)
 
-    is_new_max = new_max_f1 >= 0.86
-    if is_new_max:
-        max_F1 = new_max_f1
 
-    print('F1 score '+ str(max_F1))
-    #print(training_results)
-    
-    training_results.append({
-        'lr':learning_rate,
-        'batch_size': batch_size,
-        'epochs':epochs
-    })
-    if is_new_max:
-        ml_utils.save_model(model, training_results, filepath, not is_new_max)
-    
-def test_model_single_sample(device:torch.device, model:BertForSequenceClassification, tokenizer:BertTokenizer, new_comment:str, comments_max_len:int)->str:
+def test_model_single_sample(device: torch.device, classifier: TikTokBertClassifier, comment: str,
+                             comments_max_len: int) -> str:
     # We need Token IDs and Attention Mask for inference on the new sentence
     test_ids = []
     test_attention_mask = []
 
     # Apply the tokenizer
-    encoding = ml_utils.preprocessing(new_comment, tokenizer, comments_max_len)
+    encoding = ml_utils.preprocessing(comment, classifier.tokenizer, comments_max_len)
 
     # Extract IDs and Attention Mask
     test_ids.append(encoding['input_ids'])
     test_attention_mask.append(encoding['attention_mask'])
-    test_ids = torch.cat(test_ids, dim = 0)
-    test_attention_mask = torch.cat(test_attention_mask, dim = 0)
+    test_ids = torch.cat(test_ids, dim=0)
+    test_attention_mask = torch.cat(test_attention_mask, dim=0)
 
     # Forward pass, calculate logit predictions
     with torch.no_grad():
-        output = model(test_ids.to(device), token_type_ids = None, attention_mask = test_attention_mask.to(device))
+        output = classifier.model(test_ids.to(device), token_type_ids=None,
+                                  attention_mask=test_attention_mask.to(device))
 
     prediction = 'Offensive' if np.argmax(output.logits.cpu().numpy()).flatten().item() == 1 else 'Not offensive'
     return prediction
 
+
 def main(argv):
+    max_f_score = 0
     batch_size = 32
     learning_rate = 5e-5
+    adam_epsilon = 1e-08
     val_ratio = 0.2
     epochs = 2
-    outputdir='models'
-    dataFolder='data'
-    iterations=100
+    outputdir = 'models'
+    iterations = 100
+    inputfile = None
 
-    opts, args = getopt.getopt(argv,"hi:o:lr:vr:e:b:n:",["ifile=","odir=", "learning_rate=", "validation_ratio=", "epochs=","batch_size=", "iterations="])
+    opts, args = getopt.getopt(argv, "hi:o:lr:ae:vr:e:b:n:",
+                               ["ifile=", "outdir=", "learning_rate=", "validation_ratio=", "epochs=", "batch_size=",
+                                "iterations="])
     for opt, arg in opts:
         if opt == '-h':
-            print ('main.py -i <inputfile> -o <outputdir> -lr <learning rate> -vr <validation ratio> -e <epochs> -b <batch size> -n <number of iterations>')
+            print(
+                'main.py -i <input file> -o <output dir> -lr <learning rate> -ae <adam_epsilon> -vr <validation ratio> '
+                '-e <epochs> -b <batch size> -n <number of iterations>')
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputfile = arg
@@ -168,6 +155,8 @@ def main(argv):
             outputdir = arg
         elif opt in ("-lr", "--learning_rate"):
             learning_rate = float(arg)
+        elif opt in ("-ao", "--adam_epsilon"):
+            adam_epsilon = float(arg)
         elif opt in ("-vr", "--validation_ratio"):
             val_ratio = float(arg)
         elif opt in ("-e", "--epochs"):
@@ -176,12 +165,38 @@ def main(argv):
             batch_size = int(arg)
         elif opt in ("-n", "--iterations"):
             iterations = int(arg)
-        elif opt in ("-d", "--data_folder"):
-            dataFolder = int(arg)
 
-    
+    if not inputfile:
+        # if no inputfile, let the user know:
+        print("No input provided! Please provide a csv file with 2 columns: 1) comment, and 2) offensive (binary "
+              "label)")
+        quit()
+
     for i in range(iterations):
-        start_training_sequence(inputfile, outputdir, dataFolder, learning_rate, val_ratio, batch_size, epochs, True, True)
+        training_results, model = train_sequence(inputfile, learning_rate, adam_epsilon, val_ratio,
+                                                 batch_size, epochs,
+                                                 True, True)
+        new_max_f_score = max([float(d['F1']) for d in training_results])
+        print('F1 score ' + str(max_f_score))
+
+        is_new_max = new_max_f_score >= CURRENT_F_SCORE_THRESHOLD
+        if is_new_max:
+            max_f_score = new_max_f_score
+
+        export_data(batch_size, epochs, is_new_max, learning_rate, model, outputdir, training_results)
+
+
+def export_data(batch_size, epochs, is_new_max, learning_rate, model, outputdir, training_results):
+    time_str = time.strftime("%Y%m%d_%H%M%S")
+    filepath = outputdir + '/' + time_str + '_offensive.bak'
+    training_results.append({
+        'lr': learning_rate,
+        'batch_size': batch_size,
+        'epochs': epochs
+    })
+    if is_new_max:
+        ml_utils.save_model(model, training_results, filepath, not is_new_max)
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])
