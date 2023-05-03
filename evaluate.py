@@ -1,11 +1,12 @@
+import time
+
+import pandas as pd
 import torch
 from pandas import DataFrame
-import tiktok_text_processing
-import ml_utils
-import time
-from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-import pandas as pd
+from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
 
+import ml_utils
+import tiktok_text_processing
 from tiktok_bert import TikTokBertClassifier
 
 

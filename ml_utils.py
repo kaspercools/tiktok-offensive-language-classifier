@@ -1,18 +1,18 @@
 import json
-from typing import Tuple, List, Any
-
-import torch
-from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-from sklearn.model_selection import train_test_split
-import tiktok_text_processing
-from transformers import BertTokenizer, BertForSequenceClassification
 import re
-import pandas as pd
-import numpy as np
-from ml_metric import MlMetric
-from tqdm import trange
-import torch, gc
+from typing import Any
 
+import gc
+import numpy as np
+import pandas as pd
+import torch
+from sklearn.model_selection import train_test_split
+from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
+from tqdm import trange
+from transformers import BertTokenizer, BertForSequenceClassification
+
+import tiktok_text_processing
+from ml_metric import MlMetric
 from tiktok_bert import TikTokBertClassifier
 
 
@@ -34,6 +34,7 @@ def b_tn(preds, labels) -> float:
 def b_fn(preds, labels) -> float:
     '''Returns False Negatives (FN): count of wrong predictions of actual class 0'''
     return sum([preds != labels and preds == 0 for preds, labels in zip(preds, labels)])
+
 
 def calculate_ml_metrics(predictions, labels, reference_axis=1) -> MlMetric:
     '''
@@ -59,6 +60,7 @@ def calculate_ml_metrics(predictions, labels, reference_axis=1) -> MlMetric:
     b_recall = tp / (tp + fn) if (tp + fn) > 0 else 'nan'
     b_specificity = tn / (tn + fp) if (tn + fp) > 0 else 'nan'
     return MlMetric(b_accuracy, b_precision, b_recall, b_specificity)
+
 
 def clear_gpu_cache() -> None:
     # clear cache on re-run

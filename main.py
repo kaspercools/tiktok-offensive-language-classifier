@@ -1,16 +1,17 @@
-import torch
-from transformers import BertTokenizer, BertForSequenceClassification
-import tiktok_text_processing
-import ml_utils
-import time
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import sys
-import sys, getopt
-from tabulate import tabulate
+import getopt
 import random
+import sys
+import time
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
+from tabulate import tabulate
+from transformers import BertTokenizer, BertForSequenceClassification
+
+import ml_utils
+import tiktok_text_processing
 from tiktok_bert import TikTokBertClassifier
 
 CURRENT_F_SCORE_THRESHOLD = 0.6

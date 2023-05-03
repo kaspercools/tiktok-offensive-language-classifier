@@ -1,6 +1,7 @@
-from transformers import BertForSequenceClassification
-import ml_utils
 from torch.utils.data import DataLoader
+from transformers import BertForSequenceClassification
+
+import ml_utils
 
 
 class TikTokBertClassifier:
