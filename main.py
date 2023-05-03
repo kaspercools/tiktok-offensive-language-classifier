@@ -70,8 +70,11 @@ def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, v
     train_dataloader, validation_dataloader = ml_utils.create_datasets(token_id, attention_masks, labels, val_ratio,
                                                                        batch_size)
 
-    classifier.use_cuda()
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if torch.cuda.is_available():
+        classifier.use_cuda()
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
 
     training_results = ml_utils.train(device, classifier, train_dataloader, validation_dataloader)
 

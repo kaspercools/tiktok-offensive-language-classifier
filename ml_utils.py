@@ -178,11 +178,11 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
     # Recommended number of epochs: 2, 3, 4. See: https://arxiv.org/pdf/1810.04805.pdf
     training_results = []
 
-    for _ in trange(epochs, desc='Epoch'):
+    for _ in trange(classifier.epochs, desc='Epoch'):
 
         # ========== Training ==========
         # Set model to training mode
-        model.train()
+        classifier.model.train()
 
         # Tracking variables
         tr_loss = 0
@@ -193,7 +193,7 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
             b_input_ids, b_input_mask, b_labels = batch
             optimizer.zero_grad()
             # Forward pass
-            train_output = model(b_input_ids,
+            train_output = classifier.model(b_input_ids,
                                  token_type_ids=None,
                                  attention_mask=b_input_mask,
                                  labels=b_labels)
@@ -205,7 +205,7 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
             nb_tr_examples += b_input_ids.size(0)
             nb_tr_steps += 1
 
-        accuracy, precision, recall, specificity, predictions, labels = evaluate(device, model, validation_dataloader)
+        accuracy, precision, recall, specificity, predictions, labels = evaluate(device, classifier.model, validation_dataloader)
         loss = tr_loss / nb_tr_steps
 
         F1 = calculate_f_score(precision, recall)
@@ -254,7 +254,7 @@ def evaluate(device: torch.device, classifier: TikTokBertClassifier, validation_
     val_specificity = []
 
     for batch in validation_dataloader:
-        b_labels, eval_output = evaluate_batch(batch, device, model)
+        b_labels, eval_output = evaluate_batch(batch, device, classifier.model)
 
         predictions = eval_output.logits.detach().cpu().numpy()
 
