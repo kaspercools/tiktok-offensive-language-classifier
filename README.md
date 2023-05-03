@@ -76,6 +76,7 @@ If you wish, you can pass your own hyperparameters for fine-tuning the training 
         -i <inputfile> 
         -o <outputdir> 
         -lr <learning rate> 
+        -ae <adam_epsilon>
         -vr <validation ratio> 
         -e <epochs> 
         -b <batch size> 
@@ -85,6 +86,7 @@ If you wish, you can pass your own hyperparameters for fine-tuning the training 
 The only actual required parameter is the input csv dataset, the other values default to:
 - batch_size = 32
 - learning_rate = 5e-5
+- adam_epsilon = 1e-08
 - val_ratio = 0.2
 - epochs = 2
 - outputdir='models'
