@@ -95,7 +95,7 @@ def sample_testing(classifier, device):
     # add some custom validation
     new_comment = 'LOLOLOL @babaaibrahim the bitch was driving it. God damn I\'m not sexist but that is not a car ' \
                   'that should be driven by a female ever lolike him and GOP needs CO to get to 270. '
-    prediction = test_model_single_sample(device, classifier.model, new_comment, comment_max_len)
+    prediction = test_model_single_sample(device, classifier, new_comment, comment_max_len)
     print(prediction)
     new_comment = "cap"
     prediction = test_model_single_sample(device, classifier, new_comment, comment_max_len)
