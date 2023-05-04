@@ -1,0 +1,12 @@
+[submodule "bright-data-collector"]
+	path = bright-data-collector
+	url = https://github.com/kaspercools/bright-data-collector.git
+[submodule "tiktok-selenium-crawler"]
+	path = tiktok-selenium-crawler
+	url = https://github.com/kaspercools/tiktok-selenium-crawler
+[submodule "genz-dataset"]
+	path = genz-dataset
+	url = https://github.com/kaspercools/genz-dataset
+[submodule "weaponized-word-collector"]
+	path = weaponized-word-collector
+	url = https://github.com/kaspercools/WeaponizedWord-collector.git

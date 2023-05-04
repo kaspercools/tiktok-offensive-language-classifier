@@ -163,6 +163,13 @@ Executing text cells does nothing and executing code cells runs the code
 and produces it's output.
 To execute the whole notebook, run all cells in order.
 
+## Related submodules
+The submodules that are added to this repo some of the key scripts we have used to collect and process our data in a (semi)automatic way. These were mainly used to quickly and continuously scan, retrieve and collect data. The following submodules have been linked to this project:
+- [genz-dataset](https://github.com/kaspercools/tiktok-offensive-language-classifier/tree/main/genz-dataset)
+- [weaponized-word-collector](https://github.com/kaspercools/tiktok-offensive-language-classifier/tree/main/weaponized-word-collector)
+- [bright-data-collector](https://github.com/kaspercools/tiktok-offensive-language-classifier/tree/main/bright-data-collector)
+- [tiktok-selenium-crawler](https://github.com/kaspercools/tiktok-offensive-language-classifier/tree/main/tiktok-selenium-crawler)
+
 ## License
 
 All source code is made available under a BSD 3-clause license. You can freely
