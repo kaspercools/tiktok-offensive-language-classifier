@@ -222,7 +222,7 @@ def main(argv):
     for i in range(iterations):
         training_results, model = train_sequence(input_file, custom_voc_file, learning_rate, adam_epsilon, val_ratio,
                                                  batch_size, max_token_len, epochs,
-                                                 True, include_emoji)
+                                                 include_slang, include_emoji)
 
         new_max_f_score = max([float(d['F1']) for d in training_results])
         print('F1 score ' + str(max_f_score))
