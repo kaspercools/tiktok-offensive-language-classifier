@@ -6,13 +6,13 @@ from pandas import DataFrame
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
 
 from ou_ml import tiktok_text_processing, utils as ml_utils
-from ou_ml.tiktok_bert import TikTokBertClassifier
+from ou_ml.tiktok_bert import TikTokBertBinaryClassifier
 
 
-def evaluate_samples(bert_classifier: TikTokBertClassifier, device: torch.cuda.device, df: DataFrame):
+def evaluate_samples(bert_classifier: TikTokBertBinaryClassifier, device: torch.cuda.device, df: DataFrame) -> dict:
     df['full_text'] = df['full_text'].apply(tiktok_text_processing.replace_emoji_w_token)
 
-    df['label'] = df['label'].apply(lambda x: 1 if x == "Offensive" else 0)
+    df['label'] = df['label'].apply(lambda x: 1 if x == bert_classifier.label_column else 0)
 
     token_id, attention_masks = bert_classifier.encode_data(df['full_text'])
     token_id = torch.cat(token_id, dim=0)
@@ -24,7 +24,7 @@ def evaluate_samples(bert_classifier: TikTokBertClassifier, device: torch.cuda.d
     validation_dataloader = DataLoader(
         val_set,
         sampler=SequentialSampler(val_set),
-        batch_size=32
+        batch_size=bert_classifier.batch_size
     )
 
     model_metrics = ml_utils.evaluate(device, bert_classifier,
@@ -34,7 +34,7 @@ def evaluate_samples(bert_classifier: TikTokBertClassifier, device: torch.cuda.d
 
 def run(model_path: str) -> None:
     # Load the pre-trained model
-    bert_classifier = TikTokBertClassifier(True, True)
+    bert_classifier = TikTokBertBinaryClassifier(True, True)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

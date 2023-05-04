@@ -1,17 +1,17 @@
+import gc
 import json
 import re
-import gc
+
 import numpy as np
 import pandas as pd
 import torch
 from sklearn.model_selection import train_test_split
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from tqdm import trange
-from transformers import BertTokenizer, BertForSequenceClassification
+from transformers import BertForSequenceClassification
 
-from . import tiktok_text_processing
 from . import MlMetric
-from . import TikTokBertClassifier
+from . import TikTokBertBinaryClassifier
 
 
 def b_tp(preds, labels) -> float:
@@ -64,6 +64,7 @@ def clear_gpu_cache() -> None:
     # clear cache on re-run
     gc.collect()
     torch.cuda.empty_cache()
+
 
 def create_datasets(token_ids: list, attention_masks: list, labels: list, val_ratio: float,
                     batch_size: int = 16) -> tuple[DataLoader, DataLoader]:
@@ -130,7 +131,7 @@ def save_model(model: BertForSequenceClassification, training_results: list, fil
         outfile.write(json_object)
 
 
-def train(device: torch.device, classifier: TikTokBertClassifier, train_dataloader: DataLoader,
+def train(device: torch.device, classifier: TikTokBertBinaryClassifier, train_dataloader: DataLoader,
           validation_dataloader: DataLoader) -> [dict]:
     # Recommended learning rates (Adam): 5e-5, 3e-5, 2e-5. See: https://arxiv.org/pdf/1810.04805.pdf
     optimizer = torch.optim.AdamW(classifier.model.parameters(),
@@ -147,24 +148,9 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
 
         # Tracking variables
         tr_loss = 0
-        nb_tr_examples, nb_tr_steps = 0, 0
 
-        for step, batch in enumerate(train_dataloader):
-            batch = tuple(t.to(device) for t in batch)
-            b_input_ids, b_input_mask, b_labels = batch
-            optimizer.zero_grad()
-            # Forward pass
-            train_output = classifier.model(b_input_ids,
-                                            token_type_ids=None,
-                                            attention_mask=b_input_mask,
-                                            labels=b_labels)
-            # Backward pass
-            train_output.loss.backward()
-            optimizer.step()
-            # Update tracking variables
-            tr_loss += train_output.loss.item()
-            nb_tr_examples += b_input_ids.size(0)
-            nb_tr_steps += 1
+        nb_tr_steps, tr_loss = train_single_epoch(classifier, device, optimizer, tr_loss,
+                                                  train_dataloader)
 
         ml_metrics = evaluate(device, classifier, validation_dataloader)
         ml_metrics.loss = tr_loss / nb_tr_steps
@@ -175,6 +161,30 @@ def train(device: torch.device, classifier: TikTokBertClassifier, train_dataload
         training_results.append(training_result)
 
     return training_results
+
+
+def train_single_epoch(classifier, device, optimizer, tr_loss, train_dataloader) \
+        -> tuple[int, int]:
+    nb_tr_examples, nb_tr_steps = 0, 0
+    for step, batch in enumerate(train_dataloader):
+        batch = tuple(t.to(device) for t in batch)
+        b_input_ids, b_input_mask, b_labels = batch
+        optimizer.zero_grad()
+        # Forward pass
+        train_output = classifier.model(b_input_ids,
+                                        token_type_ids=None,
+                                        attention_mask=b_input_mask,
+                                        labels=b_labels)
+        # Backward pass
+        train_output.loss.backward()
+        optimizer.step()
+
+        # Update tracking variables
+        tr_loss += train_output.loss.item()
+        nb_tr_examples += b_input_ids.size(0)
+        nb_tr_steps += 1
+
+    return nb_tr_steps, tr_loss
 
 
 def training_result_to_dict(ml_metrics: MlMetric) -> dict:
@@ -197,7 +207,8 @@ def print_training_result(training_result: dict) -> None:
     print('\t - {}\n'.format(training_result.get('F1')))
 
 
-def evaluate(device: torch.device, classifier: TikTokBertClassifier, validation_dataloader: DataLoader) -> MlMetric:
+def evaluate(device: torch.device, classifier: TikTokBertBinaryClassifier,
+             validation_dataloader: DataLoader) -> MlMetric:
     # Set model to evaluation mode
     classifier.model.eval()
     all_predictions = []
@@ -244,7 +255,7 @@ def evaluate(device: torch.device, classifier: TikTokBertClassifier, validation_
     return MlMetric(accuracy, precision, recall, specificity, all_predictions, all_label_ids)
 
 
-def evaluate_batch(batch: list, device: torch.device, model: BertForSequenceClassification):
+def evaluate_batch(batch: list, device: torch.device, model: BertForSequenceClassification) -> tuple[list, list]:
     b_input_ids, b_input_mask, b_labels = tuple(t.to(device) for t in batch)
     with torch.no_grad():
         # Forward pass

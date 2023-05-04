@@ -1,4 +1,5 @@
 import string
+from typing import Any
 
 import emoji
 from emot.emo_unicode import UNICODE_EMOJI_ALIAS, EMOTICONS_EMO
@@ -7,7 +8,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import sent_tokenize
 from nltk.tokenize import word_tokenize
 
-data_folder = 'data'
+STOPWORDS = set(stopwords.words('english'))
 
 
 def transform_emoji_name(name: str) -> str:
@@ -20,19 +21,21 @@ def transform_emoji_name(name: str) -> str:
     return ':' + name + ':'
 
 
-## formatting
-all_emoji_emoticons = {**EMOTICONS_EMO, **UNICODE_EMOJI_ALIAS, **UNICODE_EMOJI_ALIAS,
-                       **{k: v['en'].lower() for k, v in emoji.EMOJI_DATA.items()}}
-all_emoji_emoticons = {k: transform_emoji_name(v.lower().replace("'", "").replace(":", "").strip()) for k, v in
-                       all_emoji_emoticons.items()}
+def get_all_emoji_emoticon() -> dict:
+    all_emoji_emoticons = {**EMOTICONS_EMO, **UNICODE_EMOJI_ALIAS, **UNICODE_EMOJI_ALIAS,
+                           **{k: v['en'].lower() for k, v in emoji.EMOJI_DATA.items()}}
+    all_emoji_emoticons = {k: transform_emoji_name(v.lower().replace("'", "").replace(":", "").strip()) for k, v in
+                           all_emoji_emoticons.items()}
+
+    return all_emoji_emoticons
 
 
-def get_emoji_tokens() -> list:
-    return all_emoji_emoticons.values()
+def get_emoji_tokens() -> Any:
+    return get_all_emoji_emoticon().values()
 
 
 def replace_emoji_w_token(comment: str) -> str:
-    for k, v in all_emoji_emoticons.items():
+    for k, v in get_all_emoji_emoticon().items():
         comment = comment.replace(k, v)
     return comment
 
@@ -63,19 +66,18 @@ def clean_text(text: str) -> str:
     delete_dict[' '] = ' '
     table = str.maketrans(delete_dict)
     text1 = text.translate(table)
-    textArr = text1.split()
-    text2 = ' '.join([w for w in textArr])
+    text_arr = text1.split()
 
-    return text2.lower()
+    return ' '.join([w for w in text_arr]).lower()
 
 
 def preprocess_special_chars(comment: str) -> str:
-    comment = comment.str.replace(r'(<br/>)', '', regex=False)
-    comment = comment.str.replace(r'(<a).*(>).*(</a>)', '', regex=False)
-    comment = comment.str.replace(r'(&amp)', '', regex=False)
-    comment = comment.str.replace(r'(&gt)', '', regex=False)
-    comment = comment.str.replace(r'(&lt)', '', regex=False)
-    comment = comment.str.replace(r'(\xa0)', ' ', regex=False)
+    comment = comment.str.replace(r'(<br/>)', '', regex=True)
+    comment = comment.str.replace(r'(<a).*(>).*(</a>)', '', regex=True)
+    comment = comment.str.replace(r'(&amp)', '', regex=True)
+    comment = comment.str.replace(r'(&gt)', '', regex=True)
+    comment = comment.str.replace(r'(&lt)', '', regex=True)
+    comment = comment.str.replace(r'(\xa0)', ' ', regex=True)
     return comment
 
 
@@ -85,10 +87,7 @@ def replace_emoji_with_text(text: str) -> str:
     return text
 
 
-STOPWORDS = set(stopwords.words('english'))
-
-
-def addStopwordsWithoutQuotes():
+def addStopwordsWithoutQuotes() -> None:
     newStopWords = set()
     for word in STOPWORDS:
         if "'" in word:

@@ -7,11 +7,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
+from pandas import DataFrame
 from tabulate import tabulate
 from transformers import BertTokenizer, BertForSequenceClassification
 
 from ou_ml import tiktok_text_processing, utils as ml_utils
-from ou_ml.tiktok_bert import TikTokBertClassifier
+from ou_ml.tiktok_bert import TikTokBertBinaryClassifier
+from ou_ml.ml_metric import MlMetric
 
 F_SCORE_THRESHOLD = 0.6
 
@@ -60,9 +62,9 @@ def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, v
     preprocess_comments(df, include_emoji)
     print_data_len(df)
 
-    bert_classifier = TikTokBertClassifier(include_slang, include_emoji, batch_size, max_token_len, learning_rate,
-                                           epochs,
-                                           adam_epsilon)
+    bert_classifier = TikTokBertBinaryClassifier(include_slang, include_emoji, batch_size, max_token_len, learning_rate,
+                                                 epochs,
+                                                 adam_epsilon)
 
     token_id, attention_masks = bert_classifier.encode_data(df['comment'])
     token_id = torch.cat(token_id, dim=0)
@@ -85,14 +87,14 @@ def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, v
     return training_results, bert_classifier.model
 
 
-def print_data_len(df):
+def print_data_len(df: DataFrame) -> None:
     df['comment_len'] = df['comment'].str.len()
     comment_mean = df['comment'].str.len().mean()
     print('Average string length:', comment_mean)
     print('Max sentence length: ', max([len(comment.split(' ')) for comment in df['comment']]))
 
 
-def sample_testing(classifier, device):
+def sample_testing(classifier: TikTokBertBinaryClassifier, device: torch.device) -> None:
     # add some custom validation
     new_comment = 'LOLOLOL @babaaibrahim the bitch was driving it. God damn I\'m not sexist but that is not a car ' \
                   'that should be driven by a female ever lolike him and GOP needs CO to get to 270. '
@@ -103,13 +105,13 @@ def sample_testing(classifier, device):
     print(prediction)
 
 
-def preprocess_comments(df, include_emoji):
+def preprocess_comments(df: DataFrame, include_emoji: bool) -> None:
     df['comment'] = df['comment'].apply(ml_utils.remove_links)
     if include_emoji:
         df['comment'] = df['comment'].apply(tiktok_text_processing.replace_emoji_w_token)
 
 
-def test_model_single_sample(device: torch.device, classifier: TikTokBertClassifier, comment: str) -> str:
+def test_model_single_sample(device: torch.device, classifier: TikTokBertBinaryClassifier, comment: str) -> str:
     # We need Token IDs and Attention Mask for inference on the new sentence
     test_ids = []
     test_attention_mask = []
@@ -201,9 +203,10 @@ def main(argv):
         export_data(batch_size, epochs, is_new_max, learning_rate, model, output_dir, training_results)
 
 
-def export_data(batch_size, epochs, is_new_max, learning_rate, model, outputdir, training_results):
+def export_data(batch_size: int, epochs: int, is_new_max: bool, learning_rate: float,
+                model: BertForSequenceClassification, output_dir: str, training_results: MlMetric) -> None:
     time_str = time.strftime("%Y%m%d_%H%M%S")
-    filepath = outputdir + '/' + time_str + '_offensive.bak'
+    filepath = output_dir + '/' + time_str + '_offensive.bak'
     training_results.append({
         'lr': learning_rate,
         'batch_size': batch_size,

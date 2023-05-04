@@ -5,13 +5,15 @@ from transformers import BertTokenizer, BertForSequenceClassification
 from . import tiktok_text_processing
 
 
-class TikTokBertClassifier:
+class TikTokBertBinaryClassifier:
+    label_column = 'Offensive'
+
     def __init__(self, include_slang: bool, include_emoji: bool,
                  batch_size: float = 32,
                  tokens_max_len: int = 150,
                  learning_rate: float = 5e-5,
                  epochs: int = 2,
-                 adam_epsilon=1e-08,
+                 adam_epsilon=1e-08
                  # https://machinelearningmastery.com/adam-optimization-algorithm-for-deep-learning/
                  ):
         self.tokens_max_len = tokens_max_len
@@ -30,7 +32,7 @@ class TikTokBertClassifier:
         self.adam_epsilon = adam_epsilon
         self.genz_data_file = './data/genz_slang.csv'
 
-    def encode_data(self, items: DataLoader):
+    def encode_data(self, items: DataLoader) -> tuple[list, list]:
         token_ids = []
         attention_masks = []
 
@@ -65,7 +67,7 @@ class TikTokBertClassifier:
             return_tensors='pt'
         )
 
-    def use_cuda(self):
+    def use_cuda(self) -> None:
         self.model.cuda()
 
     def generate_tokenizer(self, include_slang: bool = False, include_emoji: bool = False) -> BertTokenizer:

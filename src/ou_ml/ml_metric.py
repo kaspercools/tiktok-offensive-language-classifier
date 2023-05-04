@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
+
 @dataclass
 class MlMetric:
     accuracy: float
@@ -12,5 +13,5 @@ class MlMetric:
     predictions: Optional[list] = None
     labels: Optional[list] = None
 
-    def calculate_f_score(self):
+    def calculate_f_score(self) -> float:
         return 2 * (self.precision * self.recall) / (self.precision + self.recall)
