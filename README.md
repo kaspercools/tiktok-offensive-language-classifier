@@ -72,13 +72,23 @@ To do so, you first need to build an image locally. Open a terminal window and n
 to execute the following command:
 > docker build . -t ou_ml_tiktok
 
-Once the docker image is build you can execute the python using the following command:
+Once the docker image is built you can execute the python using the following command to start training:
 
 ``` dockerfile
 docker run --rm -it --init \
   --user="$(id -u):$(id -g)" \
   --volume="$PWD:/app" \
   ou_ml_tiktok python3 src/main.py -i "data/comments_anonymous.csv"
+````
+
+### Running on a GPU
+
+``` dockerfile
+docker run --rm -it --init \
+  --running-gpus=all
+  --user="$(id -u):$(id -g)" \
+  --volume="$PWD:/app" \
+  ou_ml_tiktok python3 main.py -i "data/comments_anonymous.csv"
 ````
 
 ## Environment setup

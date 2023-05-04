@@ -43,7 +43,7 @@ class TikTokBertBinaryClassifier:
 
         return token_ids, attention_masks
 
-    def get_genz_slang(self) -> list:
+    def get_slang(self) -> list:
         df = pd.read_csv(self.genz_data_file)
         df['keyword'] = df['keyword'].apply(lambda c: c.lower())
         df.head()
@@ -77,7 +77,7 @@ class TikTokBertBinaryClassifier:
 
         # add custom tik~tok gen-z tokens to tokenizer
         if include_slang:
-            num_genz_slang_added_tokens = tokenizer.add_tokens(tiktok_text_processing.get_genz_slang())
+            num_genz_slang_added_tokens = tokenizer.add_tokens(self.get_slang())
         if include_emoji:
             num_emoji_added_tokens = tokenizer.add_tokens(
                 tiktok_text_processing.get_emoji_tokens())  # cfr https://arxiv.org/pdf/1910.13793.pdf
