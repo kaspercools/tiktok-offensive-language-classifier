@@ -6,8 +6,8 @@ from . import tiktok_text_processing
 
 
 class TikTokBertBinaryClassifier:
-    label_column = 'Offensive'
-
+    INCLUDE_SLANG_ERR_MSG = 'You seem to be missing a slang dataset (include_slang=True). Please configure the slang dataset '
+    'location before calling the tokenizer initializer'
     def __init__(self, include_slang: bool, include_emoji: bool,
                  batch_size: float = 32,
                  tokens_max_len: int = 150,
@@ -16,8 +16,14 @@ class TikTokBertBinaryClassifier:
                  adam_epsilon=1e-08
                  # https://machinelearningmastery.com/adam-optimization-algorithm-for-deep-learning/
                  ):
+        self.include_slang = include_slang
+        self.include_emoji = include_emoji
+
+        self.tokenizer = None
+        self.custom_voc_file = None
+        self.label_column = 'Offensive'
+
         self.tokens_max_len = tokens_max_len
-        self.tokenizer = self.generate_tokenizer(include_slang, include_emoji)
         self.model = BertForSequenceClassification.from_pretrained(
             'bert-base-uncased',
             num_labels=2,
@@ -25,12 +31,10 @@ class TikTokBertBinaryClassifier:
             output_hidden_states=False,
         )
 
-        self.model.resize_token_embeddings(len(self.tokenizer))
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.adam_epsilon = adam_epsilon
-        self.genz_data_file = './data/genz_slang.csv'
 
     def encode_data(self, items: DataLoader) -> tuple[list, list]:
         token_ids = []
@@ -44,7 +48,7 @@ class TikTokBertBinaryClassifier:
         return token_ids, attention_masks
 
     def get_slang(self) -> list:
-        df = pd.read_csv(self.genz_data_file)
+        df = pd.read_csv(self.custom_voc_file)
         df['keyword'] = df['keyword'].apply(lambda c: c.lower())
         df.head()
         return df.keyword.to_list()
@@ -70,7 +74,15 @@ class TikTokBertBinaryClassifier:
     def use_cuda(self) -> None:
         self.model.cuda()
 
-    def generate_tokenizer(self, include_slang: bool = False, include_emoji: bool = False) -> BertTokenizer:
+    def init_tokenizer(self):
+
+        if self.include_slang and not self.custom_voc_file:
+            raise Exception(TikTokBertBinaryClassifier.INCLUDE_SLANG_ERR_MSG)
+
+        self.tokenizer = self.__generate_tokenizer(self.include_slang, self.include_emoji)
+        self.model.resize_token_embeddings(len(self.tokenizer))
+
+    def __generate_tokenizer(self, include_slang: bool = False, include_emoji: bool = False) -> BertTokenizer:
         tokenizer = BertTokenizer.from_pretrained(
             'bert-base-uncased',
             do_lower_case=True)

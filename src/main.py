@@ -12,8 +12,8 @@ from tabulate import tabulate
 from transformers import BertTokenizer, BertForSequenceClassification
 
 from ou_ml import tiktok_text_processing, utils as ml_utils
-from ou_ml.tiktok_bert import TikTokBertBinaryClassifier
 from ou_ml.ml_metric import MlMetric
+from ou_ml.tiktok_bert import TikTokBertBinaryClassifier
 
 F_SCORE_THRESHOLD = 0.6
 
@@ -52,19 +52,19 @@ def generate_plots(df: pd.DataFrame) -> None:
     plt.show()
 
 
-def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, val_ratio: float,
+def train_sequence(source_file: str, zoomer_slang_file: str, learning_rate: float, adam_epsilon: float,
+                   val_ratio: float,
                    batch_size: int, max_token_len: int, epochs: int, include_slang: bool = False,
                    include_emoji: bool = False) -> tuple[[dict], BertForSequenceClassification]:
     # read data from file
-    df = ml_utils.read_data_frame(sourcefile)
+    df = ml_utils.read_data_frame(source_file)
 
     # preprocessing
     preprocess_comments(df, include_emoji)
     print_data_len(df)
 
-    bert_classifier = TikTokBertBinaryClassifier(include_slang, include_emoji, batch_size, max_token_len, learning_rate,
-                                                 epochs,
-                                                 adam_epsilon)
+    bert_classifier = initialize_classifier(adam_epsilon, batch_size, epochs, include_emoji, include_slang,
+                                            learning_rate, max_token_len, zoomer_slang_file)
 
     token_id, attention_masks = bert_classifier.encode_data(df['comment'])
     token_id = torch.cat(token_id, dim=0)
@@ -85,6 +85,19 @@ def train_sequence(sourcefile: str, learning_rate: float, adam_epsilon: float, v
     sample_testing(bert_classifier, device)
 
     return training_results, bert_classifier.model
+
+
+def initialize_classifier(adam_epsilon, batch_size, epochs, include_emoji, include_slang, learning_rate, max_token_len,
+                          zoomer_slang_file) -> TikTokBertBinaryClassifier:
+    bert_classifier = TikTokBertBinaryClassifier(include_slang, include_emoji, batch_size, max_token_len, learning_rate,
+                                                 epochs,
+                                                 adam_epsilon)
+    try:
+        bert_classifier.custom_voc_file = zoomer_slang_file
+        bert_classifier.init_tokenizer()
+    except Exception as ex:
+        print("Error while initializing tokenizer: ", ex)
+    return bert_classifier
 
 
 def print_data_len(df: DataFrame) -> None:
@@ -144,9 +157,12 @@ def main(argv):
     output_dir = 'models'
     iterations = 100
     max_token_len = 150
+    custom_voc_file = None
     input_file = None
+    include_emoji = False
+    include_slang = False
 
-    opts, args = getopt.getopt(argv, "h:i:o:l;a:v:e:b:t:n:",
+    opts, args = getopt.getopt(argv, "hi:o:l;a:v:e:b:t:n:c:ms",
                                [
                                    "help"
                                    "ifile=",
@@ -156,13 +172,18 @@ def main(argv):
                                    "epochs=",
                                    "batch_size=",
                                    "max_token_len=",
-                                   "iterations="])
+                                   "iterations=",
+                                   "custom_voc=",
+                                   "slang=",
+                                   "emoji="
+                               ])
 
     for opt, arg in opts:
         if opt == '-h':
             print(
                 'main.py -i <input file> -o <output dir> -l <learning rate> -a <adam_epsilon> -v <validation ratio> '
-                '-e <epochs> -b <batch size> -t <max token len> -n <number of iterations>')
+                '-e <epochs> -b <batch size> -t <max token len> -n <number of iterations> -c <custom vocabulary input '
+                'file> -m <enable emoji tokenization> -s <enable slang tokenization>')
             sys.exit()
         elif opt in ("-i", "--ifile"):
             input_file = arg
@@ -182,17 +203,27 @@ def main(argv):
             iterations = int(arg)
         elif opt in ("-t", "--max_token_len"):
             max_token_len = int(arg)
+        elif opt in ("-c", "--custom_voc"):
+            custom_voc_file = arg
+        elif opt in ('-s', "--slang"):
+            include_slang = True
+        elif opt in ('-m', "--emoji"):
+            include_emoji = True
 
     if not input_file:
         # if no inputfile, let the user know:
         print("No input provided! Please provide a csv file with 2 columns: 1) comment, and 2) offensive (binary "
               "label)")
-        quit()
+        sys.exit()
+    elif include_slang and not custom_voc_file:
+        print(TikTokBertBinaryClassifier.INCLUDE_SLANG_ERR_MSG)
+        sys.exit()
 
     for i in range(iterations):
-        training_results, model = train_sequence(input_file, learning_rate, adam_epsilon, val_ratio,
+        training_results, model = train_sequence(input_file, custom_voc_file, learning_rate, adam_epsilon, val_ratio,
                                                  batch_size, max_token_len, epochs,
-                                                 True, True)
+                                                 True, include_emoji)
+
         new_max_f_score = max([float(d['F1']) for d in training_results])
         print('F1 score ' + str(max_f_score))
 
