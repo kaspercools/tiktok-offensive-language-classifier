@@ -131,6 +131,8 @@ If you wish, you can pass your own hyperparameters for fine-tuning the training 
         -b <batch size>
         -t <max token length> 
         -n <number of iterations>
+        -m (includes emoji tokenization)
+        -c <custom vocabulary file>
 ````
 
 The only actual required parameter is the input csv dataset, the other values default to:

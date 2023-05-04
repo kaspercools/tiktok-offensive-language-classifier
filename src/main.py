@@ -162,7 +162,7 @@ def main(argv):
     include_emoji = False
     include_slang = False
 
-    opts, args = getopt.getopt(argv, "hi:o:l;a:v:e:b:t:n:c:ms",
+    opts, args = getopt.getopt(argv, "hi:o:l;a:v:e:b:t:n:c:m",
                                [
                                    "help"
                                    "ifile=",
@@ -183,7 +183,7 @@ def main(argv):
             print(
                 'main.py -i <input file> -o <output dir> -l <learning rate> -a <adam_epsilon> -v <validation ratio> '
                 '-e <epochs> -b <batch size> -t <max token len> -n <number of iterations> -c <custom vocabulary input '
-                'file> -m <enable emoji tokenization> -s <enable slang tokenization>')
+                'file> -m (flag that enables emoji tokenization)')
             sys.exit()
         elif opt in ("-i", "--ifile"):
             input_file = arg
@@ -205,7 +205,6 @@ def main(argv):
             max_token_len = int(arg)
         elif opt in ("-c", "--custom_voc"):
             custom_voc_file = arg
-        elif opt in ('-s', "--slang"):
             include_slang = True
         elif opt in ('-m', "--emoji"):
             include_emoji = True
