@@ -85,7 +85,7 @@ docker run --rm -it --init \
 
 ``` dockerfile
 docker run --rm -it --init \
-  --running-gpus=all
+  --gpus=all
   --user="$(id -u):$(id -g)" \
   --volume="$PWD:/app" \
   ou_ml_tiktok python3 main.py -i "data/comments_anonymous.csv"
