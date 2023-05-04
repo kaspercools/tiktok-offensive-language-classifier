@@ -164,7 +164,7 @@ and produces it's output.
 To execute the whole notebook, run all cells in order.
 
 ## Related submodules
-The submodules that are added to this repo some of the key scripts we have used to collect and process our data in a (semi)automatic way. These were mainly used to quickly and continuously scan, retrieve and collect data. The following submodules have been linked to this project:
+The submodules that are added to this repo are some of the key scripts in collecting and processing the data in a (semi)automatic way. These were used to quickly and continuously scan, retrieve and collect data. Therefore, following submodules have been linked to this project:
 - [genz-dataset](https://github.com/kaspercools/genz-dataset/tree/ffbb4f0594a3792e95de16f0243deef1b43c512c)
 - [weaponized-word-collector](https://github.com/kaspercools/weaponized-word-collector)
 - [bright-data-collector](https://github.com/kaspercools/bright-data-collector/tree/287979cf8cacb691fa39325aeb002d13c4ca9f15)
