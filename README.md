@@ -78,7 +78,7 @@ Once the docker image is build you can execute the python using the following co
 docker run --rm -it --init \
   --user="$(id -u):$(id -g)" \
   --volume="$PWD:/app" \
-  ou_ml_tiktok python3 main.py -i "data/comments_anonymous.csv"
+  ou_ml_tiktok python3 src/main.py -i "data/comments_anonymous.csv"
 ````
 
 ## Environment setup
