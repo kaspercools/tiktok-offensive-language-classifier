@@ -130,7 +130,7 @@ def test_model_single_sample(device: torch.device, classifier: TikTokBertBinaryC
     test_attention_mask = []
 
     # Apply the tokenizer
-    encoding = ml_utils.preprocessing(comment, classifier.tokenizer, classifier.tokens_max_len)
+    encoding = classifier.preprocessing(comment)
 
     # Extract IDs and Attention Mask
     test_ids.append(encoding['input_ids'])
