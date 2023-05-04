@@ -1,5 +1,4 @@
-FROM anibali/pytorch:1.13.0-nocuda
-#FROM anibali/pytorch:1.13.0-cuda
+FROM anibali/pytorch:1.13.0-cuda11.8
 WORKDIR /app
 
 COPY ./requirements.txt ./
