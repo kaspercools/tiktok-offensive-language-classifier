@@ -9,4 +9,4 @@
 	url = https://github.com/kaspercools/genz-dataset
 [submodule "weaponized-word-collector"]
 	path = weaponized-word-collector
-	url = https://github.com/kaspercools/WeaponizedWord-collector.git
+	url = https://github.com/kaspercools/weaponized-word-collector
