@@ -65,7 +65,7 @@ class TikTokBertBinaryClassifier:
             input_text,
             add_special_tokens=True,
             max_length=self.tokens_max_len,
-            padding=True,
+            padding="max_length",
             return_attention_mask=True,
             truncation=True,
             return_tensors='pt'
