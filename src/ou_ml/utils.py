@@ -13,7 +13,7 @@ from transformers import BertForSequenceClassification
 from . import MlMetric
 from . import TikTokBertBinaryClassifier
 
-
+#https://towardsdatascience.com/confusion-matrix-and-class-statistics-68b79f4f510b
 def b_tp(preds, labels) -> float:
     '''Returns True Positives (TP): count of correct predictions of actual class 1'''
     return sum([preds == labels and preds == 1 for preds, labels in zip(preds, labels)])

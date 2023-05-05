@@ -118,7 +118,7 @@ Note that ENVIRONMENT_NAME is an arbitrary name for your own reference so you ca
 
 ## Running the code
 
-If you wish, you can pass your own hyperparameters for fine-tuning the training process:
+If you wish, you can pass your own hyperparameters for fine-tuning the training process [Devlin et al., 2018]:
 
 ```    
     main.py 
@@ -142,8 +142,8 @@ The only actual required parameter is the input csv dataset, the other values de
 - adam_epsilon = 1e-08
 - val_ratio = 0.2
 - epochs = 2
-- outputdir='models'
-- dataFolder='data'
+- output_dir='models'
+- data_folder='data'
 - iterations=100
 - max_token_len = 150
 
