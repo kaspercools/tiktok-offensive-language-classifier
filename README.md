@@ -21,6 +21,7 @@ Despite TikTok's efforts to remove violent extremist content, white supremacist 
 ## Presentations
 
 - April 19, 2023: [Young Talents International Conference 2023](http://ytic.eu)
+- September 22, 2023: [CLIN33](https://clin33.uantwerpen.be)
 
 ## Software implementation
 
